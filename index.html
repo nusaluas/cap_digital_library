@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAP Digital Library - Futuristic Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+        
+        :root {
+            --bg-deep: #020617;
+            --glass-bg: rgba(15, 23, 42, 0.6);
+            --neon-cyan: #22d3ee;
+            --neon-magenta: #d946ef;
+            --neon-blue: #3b82f6;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: radial-gradient(circle at top left, #0f172a 0%, #020617 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+        }
+
+        .font-cyber { font-family: 'Space Grotesk', sans-serif; }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            background: rgba(30, 41, 59, 0.7);
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(34, 211, 238, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .cat-card {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cat-card-active {
+            background: linear-gradient(135deg, #0891b2 0%, #701a75 100%) !important;
+            color: white !important;
+            border-color: var(--neon-cyan) !important;
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.4), inset 0 0 10px rgba(217, 70, 239, 0.3);
+            transform: scale(1.05);
+        }
+
+        .cat-card-inactive {
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+        }
+
+        .cat-card-inactive:hover {
+            border-color: var(--neon-magenta);
+            color: white;
+            box-shadow: 0 0 15px rgba(217, 70, 239, 0.2);
+        }
+
+        .neon-text-cyan { text-shadow: 0 0 10px rgba(34, 211, 238, 0.5); }
+        .neon-text-magenta { text-shadow: 0 0 10px rgba(217, 70, 239, 0.5); }
+
+        .btn-futuristic {
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-magenta));
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-futuristic::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: -1;
+            border-radius: inherit;
+        }
+
+        .btn-futuristic:hover::after { opacity: 1; }
+        .btn-futuristic:hover { box-shadow: 0 0 20px rgba(34, 211, 238, 0.4); }
+
+        .book-card-img {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: brightness(0.9) contrast(1.1);
+        }
+        .group:hover .book-card-img {
+            transform: scale(1.1) rotate(1deg);
+            filter: brightness(1.1);
+        }
+
+        .loading-overlay {
+            background: rgba(2, 6, 23, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.02));
+            background-size: 100% 4px, 3px 100%;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.3;
+        }
+
+        .main-logo {
+            filter: drop-shadow(0 0 8px rgba(34, 211, 238, 0.6));
+            transition: transform 0.3s ease;
+        }
+
+        select option {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+    </style>
+</head>
+<body class="overflow-hidden">
+    <div class="scanline"></div>
+
+    <div id="global-loader" class="fixed inset-0 z-[100] flex items-center justify-center loading-overlay hidden">
+        <div class="flex flex-col items-center">
+            <div class="relative w-16 h-16">
+                <div class="absolute inset-0 rounded-full border-4 border-cyan-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-t-cyan-500 animate-spin"></div>
+            </div>
+            <p class="text-cyan-400 font-cyber mt-6 tracking-widest animate-pulse uppercase">Syncing Database...</p>
+        </div>
+    </div>
+
+    <div id="app" class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-72 glass border-r border-white/10 m-2 rounded-3xl">
+            <div class="p-8 flex items-center gap-4">
+                <div class="bg-white/5 p-1 rounded-2xl border border-white/10 shadow-[0_0_15px_rgba(34,211,238,0.3)]">
+                    <img src="https://smartcap.or.id/assets/logo.png" alt="Smartcap Logo" class="w-10 h-10 object-contain main-logo" onerror="this.src='https://via.placeholder.com/40?text=S'">
+                </div>
+                <span class="text-2xl font-cyber font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-magenta-400 leading-tight uppercase">CAP Digital Library</span>
+            </div>
+
+            <nav class="flex-1 px-6 py-4 space-y-3">
+                <button onclick="setTab('library')" id="btn-library" class="tab-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <i data-lucide="library" class="w-5 h-5"></i>
+                    Library Database
+                </button>
+                <div class="pt-6 pb-2 px-4">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] font-cyber">Core Access</p>
+                </div>
+                <button onclick="checkAdminAccess()" id="btn-history" class="tab-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all text-slate-400 hover:bg-white/5 hover:text-white border border-transparent">
+                    <i data-lucide="terminal" class="w-5 h-5"></i>
+                    Admin Console
+                </button>
+            </nav>
+
+            <div class="p-6 border-t border-white/5">
+                <button onclick="clearStudentInfo()" class="w-full text-[10px] font-cyber text-slate-500 hover:text-magenta-400 py-3 transition-colors uppercase tracking-widest">
+                    Terminate Session
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col min-w-0 overflow-hidden px-2 py-2">
+            <header class="glass border border-white/10 rounded-3xl px-8 py-5 mb-4 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="relative w-full sm:w-[450px]">
+                    <i data-lucide="search" class="absolute left-5 top-1/2 -translate-y-1/2 text-cyan-500/50 w-5 h-5"></i>
+                    <input type="text" id="search-input" placeholder="Scan module title or author..." class="w-full pl-14 pr-6 py-3.5 bg-slate-900/50 border border-white/10 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/50 rounded-2xl text-sm outline-none transition-all placeholder:text-slate-600">
+                </div>
+                
+                <div class="flex items-center gap-6">
+                    <div id="student-display" class="hidden text-right">
+                        <p id="display-name" class="text-sm font-bold text-slate-100 font-cyber tracking-tight">Guest</p>
+                        <p id="display-class" class="text-[10px] text-cyan-500 font-bold uppercase tracking-widest">Session User</p>
+                    </div>
+                    <div id="user-avatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-cyan-600 to-blue-700 flex items-center justify-center text-white border border-cyan-400/30 shadow-[0_0_15px_rgba(34,211,238,0.2)] font-bold">
+                        <i data-lucide="user" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </header>
+
+            <div id="content-area" class="flex-1 overflow-y-auto p-4 md:p-6 hide-scrollbar rounded-3xl">
+                <div class="max-w-7xl mx-auto">
+                    <div id="library-header" class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-6">
+                        <div>
+                            <h2 id="page-title" class="text-4xl font-cyber font-bold text-white tracking-tighter neon-text-cyan uppercase">Archived Books</h2>
+                            <p id="stats-count" class="text-xs text-slate-500 mt-2 font-medium tracking-widest uppercase">0 Data Loaded</p>
+                        </div>
+                    </div>
+
+                    <div id="admin-header" class="hidden mb-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+                        <div>
+                            <h2 class="text-4xl font-cyber font-bold text-white tracking-tighter neon-text-magenta">Admin Control</h2>
+                            <p class="text-xs text-slate-500 mt-2 font-medium tracking-widest uppercase">Exclusive Authorized Access</p>
+                        </div>
+                        <div class="flex gap-3">
+                             <button onclick="toggleModal('add-modal', true)" class="flex items-center gap-3 btn-futuristic text-white px-8 py-3.5 rounded-2xl text-sm font-bold active:scale-95 uppercase tracking-widest font-cyber">
+                                <i data-lucide="plus-square" class="w-5 h-5"></i>
+                                New Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="category-bar" class="mb-12">
+                        <div id="category-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
+                            <button onclick="filterByCategory('Semua')" id="btn-cat-all" class="cat-card cat-card-active p-6 rounded-3xl text-[10px] font-cyber font-bold uppercase tracking-widest border">
+                                <i data-lucide="layout-grid" class="w-8 h-8 mb-2"></i> <span>Global Scan</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="books-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10"></div>
+
+                    <div id="admin-panels" class="hidden space-y-12">
+                        <!-- Module Manager -->
+                        <section class="glass p-10 rounded-[2.5rem] border-white/10">
+                            <h3 class="text-2xl font-cyber font-bold text-white flex items-center gap-3 mb-8">
+                                <i data-lucide="database" class="text-cyan-500 w-7 h-7"></i> Module Repository
+                            </h3>
+                            <div class="overflow-hidden border border-white/5 rounded-3xl">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-white/5">
+                                        <tr>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px]">Title</th>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px]">Category</th>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px] text-right">Operation</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-books-list-body"></tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <!-- Category Manager -->
+                        <section class="glass p-10 rounded-[2.5rem] border-white/10">
+                            <h3 class="text-2xl font-cyber font-bold text-white flex items-center gap-3 mb-8">
+                                <i data-lucide="box" class="text-magenta-500 w-7 h-7"></i> Data Structuring
+                            </h3>
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                <form id="add-category-form" class="space-y-6 border-r border-white/5 pr-0 lg:pr-10">
+                                    <input required type="text" id="new-cat-name" placeholder="Category Label..." class="w-full px-6 py-4 bg-slate-900/50 border border-white/10 focus:border-magenta-500 rounded-2xl outline-none text-sm font-medium transition-all text-white">
+                                    <div id="icon-picker" class="grid grid-cols-5 gap-3 p-4 bg-slate-950/50 rounded-2xl border border-white/5 max-h-56 overflow-y-auto hide-scrollbar"></div>
+                                    <input type="hidden" id="selected-icon-input" value="tag">
+                                    <button type="submit" class="w-full bg-magenta-600 text-white py-4 rounded-2xl font-bold hover:bg-magenta-500 transition-all uppercase tracking-widest font-cyber">Sync Category</button>
+                                </form>
+                                <div class="lg:col-span-2">
+                                    <div class="overflow-hidden border border-white/5 rounded-3xl">
+                                        <table class="w-full text-left text-sm">
+                                            <tbody id="category-list-body"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Traffic Monitor -->
+                        <section class="glass rounded-[2.5rem] border-white/10 overflow-hidden">
+                            <div class="p-10 border-b border-white/5 flex flex-col lg:flex-row items-center justify-between gap-6">
+                                <div class="flex items-center gap-4">
+                                    <i data-lucide="activity" class="text-cyan-500 w-7 h-7"></i>
+                                    <div>
+                                        <h3 class="text-2xl font-cyber font-bold text-white leading-none">Traffic Monitor</h3>
+                                        <p class="text-[10px] text-slate-500 uppercase tracking-widest mt-1 text-center lg:text-left">Reader Session Registry</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3 w-full lg:w-auto">
+                                    <select id="log-month-filter" onchange="renderHistory()" class="bg-slate-900/80 border border-white/10 text-cyan-400 text-xs px-4 py-3 rounded-2xl outline-none focus:border-cyan-500 transition-all font-cyber uppercase tracking-widest flex-1 lg:flex-none">
+                                        <option value="all">All Cycles</option>
+                                    </select>
+                                    <button onclick="confirmClearHistory()" class="flex items-center justify-center gap-2 bg-red-500/10 text-red-400 px-6 py-3 rounded-2xl text-xs font-bold hover:bg-red-500/20 border border-red-500/20 transition-all uppercase tracking-widest font-cyber">
+                                        Purge Logs
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto p-4">
+                                <table class="w-full text-left text-sm">
+                                    <thead class="bg-white/5">
+                                        <tr>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px]">Entity (Student)</th>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px]">Module Title</th>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px]">Session Duration [Start - End]</th>
+                                            <th class="px-8 py-6 font-cyber text-slate-400 uppercase tracking-widest text-[10px] text-center">Protocol Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="history-body"></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <div id="empty-state" class="hidden glass rounded-[3rem] border-2 border-dashed border-white/10 p-24 text-center">
+                        <div class="bg-cyan-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8">
+                            <i data-lucide="ghost" class="text-cyan-400 w-12 h-12"></i>
+                        </div>
+                        <h3 class="text-3xl font-cyber font-bold text-white mb-4 uppercase">No Data Detected</h3>
+                        <p class="text-slate-500 max-w-sm mx-auto font-medium">Administrator authorization required to upload new modules.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Reader Modal -->
+        <div id="reader-overlay" class="fixed inset-0 z-[60] hidden bg-slate-950 flex flex-col animate-in fade-in duration-500">
+            <div class="flex items-center justify-between p-6 bg-slate-900 border-b border-white/10 text-white">
+                <div class="flex items-center gap-6">
+                    <button onclick="closeReader()" class="p-3 hover:bg-white/5 rounded-2xl transition-all active:scale-90 border border-white/10"><i data-lucide="chevron-left"></i></button>
+                    <div>
+                        <h1 id="reader-title" class="font-cyber font-bold text-xl neon-text-cyan uppercase tracking-tight">Active Module</h1>
+                        <p id="reader-author" class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Authorized Reading Session</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-8">
+                    <div class="hidden sm:flex items-center gap-4 px-6 py-2.5 bg-slate-950 rounded-2xl border border-cyan-500/30">
+                        <span class="w-3 h-3 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_10px_#06b6d4]"></span>
+                        <span id="reading-timer" class="font-cyber font-bold text-cyan-400 tracking-widest">00:00</span>
+                    </div>
+                    <button id="terminate-btn" onclick="closeReader()" class="bg-red-500 hover:bg-red-600 px-8 py-2.5 rounded-2xl text-xs font-bold shadow-lg transition-all uppercase tracking-widest">Terminate</button>
+                </div>
+            </div>
+            <div class="flex-1 bg-white">
+                <iframe id="reader-frame" class="w-full h-full border-none" allow="autoplay"></iframe>
+            </div>
+        </div>
+
+        <!-- Identity Verify -->
+        <div id="student-modal" class="fixed inset-0 z-[70] hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/90 backdrop-blur-xl"></div>
+            <div class="relative glass w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden p-12 animate-in zoom-in duration-300 border-white/20">
+                <div class="text-center mb-10">
+                    <div class="bg-gradient-to-tr from-cyan-500 to-magenta-600 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 text-white shadow-[0_0_30px_rgba(34,211,238,0.3)]">
+                        <i data-lucide="fingerprint" class="w-12 h-12"></i>
+                    </div>
+                    <h3 class="text-3xl font-cyber font-bold text-white mb-3 tracking-tighter uppercase">Identity Verified?</h3>
+                    <p class="text-slate-400 text-sm font-medium">Please enter your clearance credentials.</p>
+                </div>
+                <form id="student-form" class="space-y-6">
+                    <input required type="text" id="student-name" placeholder="Legal Name..." class="w-full px-6 py-5 bg-slate-900/50 border-2 border-white/5 focus:border-cyan-500 focus:bg-slate-900 rounded-[2rem] outline-none transition-all text-white font-medium">
+                    <input required type="text" id="student-class" placeholder="Sector / Division..." class="w-full px-6 py-5 bg-slate-900/50 border-2 border-white/5 focus:border-cyan-500 focus:bg-slate-900 rounded-[2rem] outline-none transition-all text-white font-medium">
+                    <button type="submit" class="w-full btn-futuristic text-white py-6 rounded-[2rem] font-bold shadow-2xl active:scale-95 text-xl tracking-tighter font-cyber">INITIATE SESSION</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add Book -->
+        <div id="add-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md" onclick="toggleModal('add-modal', false)"></div>
+            <div class="relative glass w-full max-w-md rounded-[3rem] shadow-2xl overflow-hidden animate-in zoom-in duration-200 border-white/20">
+                <div class="p-10 border-b border-white/5 flex items-center justify-between">
+                    <h3 class="text-2xl font-cyber font-bold text-white tracking-tight uppercase">New Module Entry</h3>
+                    <button onclick="toggleModal('add-modal', false)" class="text-slate-500 hover:text-white p-2 hover:bg-white/5 rounded-xl transition-all border border-transparent hover:border-white/10"><i data-lucide="x"></i></button>
+                </div>
+                <form id="add-book-form" class="p-10 space-y-6">
+                    <input required type="text" id="input-title" placeholder="Module Title..." class="w-full px-6 py-4 bg-slate-900/50 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none text-white transition-all">
+                    <input type="text" id="input-author" placeholder="Author Entity..." class="w-full px-6 py-4 bg-slate-900/50 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none text-white transition-all">
+                    <select id="input-category-select" class="w-full px-6 py-4 bg-slate-900/50 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none text-slate-400 font-medium">
+                        <option value="Umum">Generic Category</option>
+                    </select>
+                    <input required type="text" id="input-drive" placeholder="Cloud Storage ID/Link..." class="w-full px-6 py-4 bg-slate-900/50 border border-white/10 focus:border-cyan-500 rounded-2xl outline-none text-white transition-all">
+                    <button type="submit" class="w-full btn-futuristic text-white py-5 rounded-2xl font-bold shadow-xl active:scale-95 transition-all mt-4 tracking-widest font-cyber uppercase">Execute Upload</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Password Modal -->
+        <div id="admin-password-modal" class="fixed inset-0 z-[80] hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/95 backdrop-blur-2xl" onclick="toggleModal('admin-password-modal', false)"></div>
+            <div class="relative glass w-full max-w-sm rounded-[3rem] shadow-2xl overflow-hidden p-12 animate-in zoom-in duration-300 border-magenta-500/30">
+                <div class="text-center mb-10">
+                    <div class="bg-magenta-500/10 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-8 text-magenta-500 border border-magenta-500/20 shadow-[0_0_20px_rgba(217,70,239,0.3)]">
+                        <i data-lucide="shield-alert" class="w-12 h-12"></i>
+                    </div>
+                    <h3 class="text-3xl font-cyber font-bold text-white mb-3 tracking-tighter uppercase">Root Access</h3>
+                    <p class="text-slate-400 text-sm font-medium">Authentication key required.</p>
+                </div>
+                <form id="admin-password-form" class="space-y-8">
+                    <input required type="password" id="admin-pass-input" placeholder="••••••••" class="w-full px-6 py-5 bg-slate-900/50 border-2 border-white/5 focus:border-magenta-500 rounded-2xl text-center outline-none font-bold tracking-[0.6em] text-2xl text-white transition-all">
+                    <button type="submit" class="w-full bg-magenta-600 hover:bg-magenta-500 text-white py-6 rounded-2xl font-bold shadow-2xl active:scale-95 transition-all font-cyber uppercase tracking-widest">Decrypt</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alert Modal -->
+        <div id="alert-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
+            <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-md"></div>
+            <div class="relative glass w-full max-w-sm rounded-[3rem] p-12 shadow-2xl text-center border-b-[10px] border-cyan-500">
+                <p id="alert-message" class="text-white font-bold mb-10 text-xl leading-snug neon-text-cyan font-cyber uppercase"></p>
+                <button onclick="toggleModal('alert-modal', false)" class="bg-white/10 text-white px-10 py-5 rounded-2xl font-bold w-full hover:bg-cyan-500 transition-all border border-white/10 uppercase tracking-widest font-cyber text-sm">Acknowledged</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxoquz8Yx_4Tu2C0tJ9yAcAEumOF2XUdlq35GiVKwNEgD4ATGnnKdSdx-MPLx3k9OTC/exec"; 
+        
+        const DEFAULT_CATEGORIES = [
+            { name: 'Biografi / Autobiografi', icon: 'user-square' },
+            { name: 'Sejarah', icon: 'landmark' },
+            { name: 'Sains', icon: 'atom' },
+            { name: 'Pendidikan / Buku Pelajaran', icon: 'graduation-cap' },
+            { name: 'Agama & Spiritual', icon: 'sun' },
+            { name: 'Motivasi & Pengembangan Diri', icon: 'zap' },
+            { name: 'Bisnis & Ekonomi', icon: 'briefcase' },
+            { name: 'Kesehatan & Gaya Hidup', icon: 'activity' },
+            { name: 'Hobi & Keterampilan', icon: 'palette' },
+            { name: 'Referensi (Kamus, Ensiklopedia, Atlas)', icon: 'book-marked' }
+        ];
+
+        let allBooks = [];
+        let allCategories = [];
+        let readingHistory = [];
+        let currentTab = 'library';
+        let currentCategory = 'Semua';
+        let studentInfo = JSON.parse(localStorage.getItem('student_identity') || 'null');
+        let pendingBook = null;
+        let activeReadingSession = null;
+        let startTime = null;
+        let timerInterval = null;
+        let isAdminAuthenticated = false;
+
+        const iconPresets = ['tag', 'star', 'award', 'heart', 'zap', 'atom', 'landmark', 'graduation-cap', 'briefcase', 'activity', 'palette', 'users', 'book', 'bookmark', 'flame', 'globe', 'music', 'camera', 'coffee', 'gift', 'shield', 'sun', 'moon', 'map'];
+
+        // ==========================================
+        // DATABASE API (GOOGLE SHEETS)
+        // ==========================================
+
+        async function apiRequest(action, payload = {}) {
+            try {
+                showLoader(true);
+                const params = new URLSearchParams({ action, ...payload });
+                const response = await fetch(`${WEB_APP_URL}?${params.toString()}`);
+                const result = await response.json();
+                return result;
+            } catch (err) {
+                console.error("API Get Error:", err);
+                return { success: false, data: [] };
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function apiPost(action, data = {}) {
+            try {
+                showLoader(true);
+                await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    cache: 'no-cache',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, ...data })
+                });
+                setTimeout(() => refreshAllData(), 2500); 
+                return { success: true };
+            } catch (err) {
+                console.error("API Post Error:", err);
+                return { success: false };
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        async function refreshAllData() {
+            const [booksRes, catsRes, histRes] = await Promise.all([
+                apiRequest('getBooks'),
+                apiRequest('getCategories'),
+                apiRequest('getHistory')
+            ]);
+
+            allBooks = (booksRes && booksRes.success && Array.isArray(booksRes.data)) ? booksRes.data : [];
+            let sheetCats = (catsRes && catsRes.success && Array.isArray(catsRes.data)) ? catsRes.data : [];
+            allCategories = sheetCats.length > 0 ? sheetCats : DEFAULT_CATEGORIES;
+            readingHistory = (histRes && histRes.success && Array.isArray(histRes.data)) ? histRes.data : [];
+            
+            updateLogMonthFilter();
+            updateUI();
+        }
+
+        function updateUI() {
+            renderCategoryGrid();
+            updateCategorySelect();
+            if (currentTab === 'library') renderBooks();
+            else {
+                renderHistory();
+                renderCategoryManagementTable();
+                renderAdminBooksTable();
+            }
+            lucide.createIcons();
+        }
+
+        // ==========================================
+        // UI RENDERING
+        // ==========================================
+
+        function renderCategoryGrid() {
+            const grid = document.getElementById('category-grid');
+            if (!grid) return;
+            const allBtn = document.getElementById('btn-cat-all');
+            grid.innerHTML = ''; 
+            grid.appendChild(allBtn);
+
+            allCategories.forEach(cat => {
+                const name = cat.name || cat.Name || "";
+                if (!name) return;
+                const icon = cat.icon || cat.Icon || 'tag';
+                const isActive = currentCategory === name;
+                
+                const btn = document.createElement('button');
+                btn.onclick = () => filterByCategory(name);
+                btn.className = `cat-card ${isActive ? 'cat-card-active' : 'cat-card-inactive'} p-6 rounded-3xl text-[10px] font-cyber font-bold uppercase tracking-widest border`;
+                let shortName = name;
+                if (shortName.length > 12) shortName = shortName.split('/')[0].split('(')[0].trim().substring(0, 10) + '..';
+                btn.innerHTML = `<i data-lucide="${icon}" class="w-8 h-8 mb-2"></i><span>${shortName}</span>`;
+                grid.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        function updateCategorySelect() {
+            const select = document.getElementById('input-category-select');
+            if (!select) return;
+            select.innerHTML = '<option value="Umum">Generic Category</option>';
+            allCategories.forEach(cat => {
+                const name = cat.name || cat.Name;
+                if (name) select.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+        }
+
+        function renderAdminBooksTable() {
+            const body = document.getElementById('admin-books-list-body');
+            if (!body) return;
+            body.innerHTML = '';
+            allBooks.forEach(book => {
+                const row = document.createElement('tr');
+                row.className = "border-b border-white/5 hover:bg-cyan-500/5 transition-colors group";
+                row.innerHTML = `
+                    <td class="px-8 py-6 font-cyber font-bold text-slate-100 uppercase tracking-widest text-[11px]">${book.title || book.Title || "Untitled"}</td>
+                    <td class="px-8 py-6"><span class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-[9px] font-bold uppercase">${book.category || book.Category || 'Generic'}</span></td>
+                    <td class="px-8 py-6 text-right">
+                        <button onclick="deleteBook('${book.id || book.ID}')" class="p-3 text-red-500 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        function renderCategoryManagementTable() {
+            const body = document.getElementById('category-list-body');
+            if (!body) return;
+            body.innerHTML = '';
+            allCategories.forEach(cat => {
+                const id = cat.id || cat.ID;
+                const name = cat.name || cat.Name || "Unknown";
+                const icon = cat.icon || cat.Icon || 'tag';
+                
+                const row = document.createElement('tr');
+                row.className = "border-b border-white/5 hover:bg-white/5 transition-colors";
+                row.innerHTML = `
+                    <td class="px-8 py-6 w-16"><i data-lucide="${icon}" class="w-6 h-6 text-magenta-500"></i></td>
+                    <td class="px-8 py-6 font-cyber font-bold text-slate-100 uppercase tracking-widest text-xs">${name}</td>
+                    <td class="px-8 py-6 text-right">
+                        ${id ? `<button onclick="deleteCategory('${id}')" class="p-3 text-red-400 hover:text-red-600 transition-all border border-red-500/20 rounded-xl hover:bg-red-500/10"><i data-lucide="trash-2" class="w-5 h-5"></i></button>` : '<span class="text-[9px] text-slate-500 font-cyber uppercase tracking-widest">Locked</span>'}
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+            lucide.createIcons();
+        }
+
+        function renderBooks() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase();
+            const grid = document.getElementById('books-grid');
+            const emptyState = document.getElementById('empty-state');
+            
+            let filtered = allBooks.filter(b => {
+                if (!b) return false;
+                const title = (b.title || b.Title || "").toLowerCase();
+                const author = (b.author || b.Author || "").toLowerCase();
+                const category = b.category || b.Category || "";
+                
+                return (currentCategory === 'Semua' || category === currentCategory) && 
+                       (title.includes(searchTerm) || author.includes(searchTerm));
+            });
+
+            document.getElementById('stats-count').innerText = `SYSTEM STATUS: ${filtered.length} ARCHIVES LOADED`;
+            grid.innerHTML = ''; grid.classList.remove('hidden'); emptyState.classList.toggle('hidden', filtered.length > 0);
+            
+            filtered.forEach(book => {
+                const title = book.title || book.Title || "Unknown Module";
+                const author = book.author || book.Author || "Anonymous Creator";
+                const driveId = book.driveId || book.driveID || book.DriveID;
+                const category = book.category || book.Category || 'GENERIC';
+                const id = book.id || book.ID;
+
+                const card = document.createElement('div');
+                card.className = "group glass-card rounded-[2.5rem] overflow-hidden cursor-pointer flex flex-col h-full";
+                card.onclick = () => handleBookClick(book);
+                const thumbUrl = `https://drive.google.com/thumbnail?id=${driveId}&sz=w500`;
+                
+                const deleteBtnHtml = isAdminAuthenticated ? `
+                    <div class="absolute top-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="event.stopPropagation(); deleteBook('${id}')" class="p-3 bg-red-500/20 text-red-500 rounded-xl hover:bg-red-500 hover:text-white border border-red-500/40 shadow-xl transition-all"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    <div class="aspect-[3/4] bg-slate-900/80 relative overflow-hidden flex items-center justify-center">
+                        <img src="${thumbUrl}" alt="${title}" class="book-card-img w-full h-full object-cover" onerror="this.src='https://via.placeholder.com/300x400?text=No+Data'">
+                        <div class="absolute bottom-5 left-5 glass px-4 py-2 rounded-xl text-[9px] font-cyber font-bold text-cyan-400 border border-cyan-500/30 uppercase tracking-[0.2em]">${category}</div>
+                        ${deleteBtnHtml}
+                    </div>
+                    <div class="p-8 flex-1 flex flex-col justify-between">
+                        <div>
+                            <h3 class="font-cyber font-bold text-white line-clamp-2 leading-tight mb-2 text-lg tracking-tight group-hover:text-cyan-400 transition-colors uppercase">${title}</h3>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">${author}</p>
+                        </div>
+                        <div class="mt-10 flex items-center text-[10px] text-cyan-500/60 font-cyber font-bold tracking-[0.2em] group-hover:text-cyan-400 transition-colors uppercase">Execute Entry <i data-lucide="chevron-right" class="w-4 h-4 ml-2"></i></div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function updateLogMonthFilter() {
+            const filter = document.getElementById('log-month-filter');
+            if (!filter) return;
+            
+            const uniqueMonths = new Set();
+            readingHistory.forEach(log => {
+                const ts = log.timestamp || log.Timestamp || log.Waktu;
+                if (!ts) return;
+                
+                const parts = ts.split(',')[0].split('/');
+                if (parts.length === 3) {
+                    const monthYear = `${parts[1]}-${parts[2]}`; // MM-YYYY
+                    uniqueMonths.add(monthYear);
+                }
+            });
+
+            const currentVal = filter.value;
+            filter.innerHTML = '<option value="all">All Cycles</option>';
+            
+            Array.from(uniqueMonths).sort((a, b) => {
+                const [mA, yA] = a.split('-').map(Number);
+                const [mB, yB] = b.split('-').map(Number);
+                return (yB * 12 + mB) - (yA * 12 + mA);
+            }).forEach(my => {
+                const [m, y] = my.split('-');
+                const monthName = new Date(y, m-1).toLocaleString('id-ID', { month: 'long' });
+                filter.innerHTML += `<option value="${my}">${monthName} ${y}</option>`;
+            });
+            
+            filter.value = currentVal;
+        }
+
+        function renderHistory() {
+            const body = document.getElementById('history-body');
+            const monthFilter = document.getElementById('log-month-filter')?.value;
+            if (!body) return;
+            body.innerHTML = '';
+            
+            let logs = readingHistory.slice().reverse();
+            
+            if (monthFilter && monthFilter !== 'all') {
+                logs = logs.filter(log => {
+                    const ts = log.timestamp || log.Timestamp || log.Waktu;
+                    const parts = ts?.split(',')[0].split('/');
+                    return parts && `${parts[1]}-${parts[2]}` === monthFilter;
+                });
+            }
+
+            logs.forEach(log => {
+                if (!log) return;
+                const ts = log.timestamp || log.Timestamp || log.Waktu || "Sync_Error";
+                const row = document.createElement('tr');
+                row.className = "border-b border-white/5 hover:bg-cyan-500/5 transition-colors group";
+                row.innerHTML = `
+                    <td class="px-8 py-6">
+                        <div class="font-cyber font-bold text-slate-100 tracking-tight uppercase">${log.studentName || log.StudentName || "Subject_X"}</div>
+                        <div class="text-[9px] text-cyan-500 uppercase font-bold tracking-widest">${log.studentClass || log.StudentClass || "Sector_?"}</div>
+                    </td>
+                    <td class="px-8 py-6 font-cyber font-bold text-slate-300 text-xs uppercase">${log.bookTitle || log.BookTitle || "Null_Module"}</td>
+                    <td class="px-8 py-6">
+                        <div class="text-[11px] text-magenta-400 font-mono tracking-tighter shadow-[0_0_5px_rgba(217,70,239,0.2)] uppercase">${ts}</div>
+                        <div class="text-[8px] text-slate-500 font-cyber uppercase mt-1">Satellite Link Synchronization</div>
+                    </td>
+                    <td class="px-8 py-6 text-center">
+                        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-[9px] font-cyber font-bold uppercase tracking-widest bg-cyan-500/10 text-cyan-500 border border-cyan-500/20">
+                            <span class="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse shadow-[0_0_5px_#06b6d4]"></span>
+                            Authorized
+                        </span>
+                    </td>
+                `;
+                body.appendChild(row);
+            });
+        }
+
+        // ==========================================
+        // HANDLERS & LOGIC
+        // ==========================================
+
+        window.filterByCategory = (cat) => { currentCategory = cat; renderCategoryGrid(); renderBooks(); };
+        window.checkAdminAccess = () => { if (isAdminAuthenticated) { setTab('history'); return; } toggleModal('admin-password-modal', true); setTimeout(() => document.getElementById('admin-pass-input').focus(), 100); };
+        
+        document.getElementById('admin-password-form').onsubmit = (e) => { 
+            e.preventDefault(); 
+            if (document.getElementById('admin-pass-input').value === "mataharisaja") { 
+                isAdminAuthenticated = true; 
+                toggleModal('admin-password-modal', false); 
+                setTab('history'); 
+                renderBooks();
+            } else { 
+                toggleModal('admin-password-modal', false); 
+                showAlert("ACCESS DENIED: KEY MISMATCH"); 
+            } 
+            e.target.reset(); 
+        };
+
+        window.setTab = (tab) => {
+            currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all text-slate-400 hover:bg-white/5 hover:text-white border border-transparent";
+            });
+            const activeBtn = document.getElementById(`btn-${tab}`);
+            if (activeBtn) {
+                const color = tab === 'library' ? 'cyan' : 'magenta';
+                activeBtn.className = `tab-btn w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all bg-${color}-500/10 text-${color}-400 border border-${color}-500/20 shadow-[0_0_15px_rgba(0,0,0,0.1)]`;
+            }
+            document.getElementById('library-header').classList.toggle('hidden', tab !== 'library');
+            document.getElementById('admin-header').classList.toggle('hidden', tab === 'library');
+            document.getElementById('category-bar').classList.toggle('hidden', tab !== 'library');
+            document.getElementById('books-grid').classList.toggle('hidden', tab !== 'library');
+            document.getElementById('admin-panels').classList.toggle('hidden', tab === 'library');
+            refreshAllData();
+        };
+
+        window.handleBookClick = (book) => { 
+            if (!studentInfo) { pendingBook = book; toggleModal('student-modal', true); } 
+            else openReader(book); 
+        };
+
+        window.openReader = async (book) => { 
+            if (!book) return; 
+            const title = book.title || book.Title || "INITIALIZING...";
+            const author = book.author || book.Author || "ANON_ENTITY";
+            const driveId = book.driveId || book.driveID || book.DriveID;
+
+            document.getElementById('reader-title').innerText = title; 
+            document.getElementById('reader-author').innerText = author; 
+            document.getElementById('reader-frame').src = `https://drive.google.com/file/d/${driveId}/preview`; 
+            document.getElementById('reader-overlay').classList.remove('hidden'); 
+            
+            startTime = new Date(); 
+            activeReadingSession = {
+                date: startTime.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+                startTimeStr: startTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                bookTitle: title
+            };
+
+            if (timerInterval) clearInterval(timerInterval); 
+            timerInterval = setInterval(() => { 
+                const diff = Math.floor((new Date() - startTime) / 1000); 
+                document.getElementById('reading-timer').innerText = `${String(Math.floor(diff/60)).padStart(2,'0')}:${String(diff%60).padStart(2,'0')}`; 
+            }, 1000); 
+        };
+
+        window.closeReader = async () => { 
+            if (activeReadingSession) {
+                const btn = document.getElementById('terminate-btn');
+                const oldText = btn.innerText;
+                btn.innerText = "SAVING...";
+                btn.disabled = true;
+
+                const endTime = new Date();
+                const endTimeStr = endTime.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                
+                // Format: DD/MM/YYYY | 11:14:52 - 11:30:10
+                const fullTimestamp = `${activeReadingSession.date} | ${activeReadingSession.startTimeStr} - ${endTimeStr}`;
+                
+                await apiPost('addHistory', { 
+                    studentName: studentInfo.name, 
+                    studentClass: studentInfo.class, 
+                    bookTitle: activeReadingSession.bookTitle, 
+                    timestamp: fullTimestamp
+                }); 
+                
+                activeReadingSession = null;
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
+
+            document.getElementById('reader-overlay').classList.add('hidden'); 
+            document.getElementById('reader-frame').src = ''; 
+            if (timerInterval) clearInterval(timerInterval); 
+        };
+
+        window.toggleModal = (id, show) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !show); };
+        window.showAlert = (msg) => { document.getElementById('alert-message').innerText = msg; toggleModal('alert-modal', true); lucide.createIcons(); };
+        function showLoader(show) { document.getElementById('global-loader').classList.toggle('hidden', !show); }
+        window.confirmClearHistory = async () => { if (confirm("DESTRUCTIVE ACTION: Wipe all transmission logs?")) await apiPost('clearHistory'); };
+
+        document.getElementById('student-form').onsubmit = (e) => {
+            e.preventDefault();
+            studentInfo = { name: document.getElementById('student-name').value, class: document.getElementById('student-class').value };
+            localStorage.setItem('student_identity', JSON.stringify(studentInfo));
+            updateStudentDisplay(); 
+            toggleModal('student-modal', false);
+            if (pendingBook) { openReader(pendingBook); pendingBook = null; }
+        };
+
+        function updateStudentDisplay() {
+            if (studentInfo) {
+                document.getElementById('student-display').classList.remove('hidden');
+                document.getElementById('display-name').innerText = studentInfo.name;
+                document.getElementById('display-class').innerText = studentInfo.class;
+                const avatar = document.getElementById('user-avatar');
+                avatar.innerHTML = `<span class="font-cyber font-bold text-white text-lg">${(studentInfo.name || "G").substring(0,1).toUpperCase()}</span>`;
+            }
+        }
+
+        window.clearStudentInfo = () => { if(confirm('TERMINATE CURRENT SESSION?')) { localStorage.removeItem('student_identity'); location.reload(); } };
+        
+        document.getElementById('add-book-form').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            const driveRaw = document.getElementById('input-drive').value; 
+            const driveId = driveRaw.match(/\/d\/(.+?)\//)?.[1] || driveRaw.match(/id=(.+?)(&|$)/)?.[1] || driveRaw; 
+            await apiPost('addBook', { 
+                title: document.getElementById('input-title').value, 
+                author: document.getElementById('input-author').value, 
+                category: document.getElementById('input-category-select').value, 
+                driveId: driveId 
+            }); 
+            toggleModal('add-modal', false); 
+            e.target.reset(); 
+        };
+
+        window.deleteBook = async (id) => { if(confirm("ERASE MODULE FROM REPOSITORY?")) await apiPost('deleteBook', { id }); };
+
+        document.getElementById('add-category-form').onsubmit = async (e) => { 
+            e.preventDefault(); 
+            const name = document.getElementById('new-cat-name').value; 
+            const icon = document.getElementById('selected-icon-input').value; 
+            await apiPost('addCategory', { name, icon }); 
+            e.target.reset(); 
+            initIconPicker(); 
+        };
+
+        window.deleteCategory = async (id) => { if (confirm("DESTRUCTIVE ACTION: Confirm category deletion?")) await apiPost('deleteCategory', { id }); };
+
+        function initIconPicker() {
+            const picker = document.getElementById('icon-picker');
+            if (!picker) return;
+            picker.innerHTML = '';
+            iconPresets.forEach(iconName => {
+                const div = document.createElement('div');
+                div.className = `icon-option p-4 bg-slate-900 border border-white/10 rounded-xl flex items-center justify-center hover:bg-cyan-500/20 hover:border-cyan-500 ${iconName === 'tag' ? 'selected border-cyan-500 bg-cyan-500/20' : ''}`;
+                div.dataset.icon = iconName;
+                div.innerHTML = `<i data-lucide="${iconName}" class="w-5 h-5 ${iconName === 'tag' ? 'text-cyan-400' : 'text-slate-400'}"></i>`;
+                div.onclick = () => { 
+                    document.querySelectorAll('.icon-option').forEach(el => {
+                        el.classList.remove('selected', 'border-cyan-500', 'bg-cyan-500/20');
+                        const i = el.querySelector('i');
+                        if (i) i.classList.replace('text-cyan-400', 'text-slate-400');
+                    });
+                    div.classList.add('selected', 'border-cyan-500', 'bg-cyan-500/20');
+                    const i = div.querySelector('i');
+                    if (i) i.classList.replace('text-slate-400', 'text-cyan-400');
+                    document.getElementById('selected-icon-input').value = iconName; 
+                };
+                picker.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        document.getElementById('search-input').oninput = renderBooks;
+        window.onload = () => { updateStudentDisplay(); initIconPicker(); refreshAllData(); lucide.createIcons(); };
+    </script>
+</body>
+</html>
